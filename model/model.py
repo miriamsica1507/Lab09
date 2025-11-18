@@ -1,6 +1,8 @@
 from database.regione_DAO import RegioneDAO
 from database.tour_DAO import TourDAO
 from database.attrazione_DAO import AttrazioneDAO
+from model.tour import Tour
+from model.attrazione import Attrazione
 
 class Model:
     def __init__(self):
@@ -40,6 +42,10 @@ class Model:
         """
 
         # TODO
+        for tour in self.tour_map:
+            Tour.attrazioni.add(tour)
+        for attrazione in self.attrazioni_map:
+            Attrazione.tour.add(attrazione)
 
     def genera_pacchetto(self, id_regione: str, max_giorni: int = None, max_budget: float = None):
         """
