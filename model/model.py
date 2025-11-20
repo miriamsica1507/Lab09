@@ -28,6 +28,7 @@ class Model:
     def load_tour(self):
         """ Carica tutti i tour in un dizionario [id, Tour]"""
         self.tour_map = TourDAO.get_tour()
+        print(self.tour_map)
 
     def load_attrazioni(self):
         """ Carica tutte le attrazioni in un dizionario [id, Attrazione]"""
@@ -42,10 +43,16 @@ class Model:
         """
 
         # TODO
-        for tour in self.tour_map:
-            Tour.attrazioni.add(tour)
-        for attrazione in self.attrazioni_map:
-            Attrazione.tour.add(attrazione)
+        # Prendo le relazioni tour e attrazione
+        relazioni = TourDAO.get_tour_attrazioni()
+        for relazione in relazioni:
+            id_tour = relazione["id_tour"]
+            id_attrazione = relazione["id_attrazione"]
+            tour_istanza = self.tour_map.get(id_tour)
+            attrazione_istanza = self.attrazioni_map.get(id_attrazione)
+            # Riempo gli insiemi nelle rispettive classi, attrizione e tour
+            tour_istanza.attrazioni.add(attrazione_istanza)
+            attrazione_istanza.tour.add(tour_istanza)
 
     def genera_pacchetto(self, id_regione: str, max_giorni: int = None, max_budget: float = None):
         """
@@ -63,6 +70,22 @@ class Model:
         self._valore_ottimo = -1
 
         # TODO
+        attrazioni_usate = set()
+        for tour in self.tour_map.values():
+            if tour.id_regione == id_regione:
+                if tour.durata_giorni == max_giorni:
+                    if tour.budget <= max_budget:
+                            self._costo += tour.budget
+                            for att in tour.attrazioni:
+                                attrazioni_usate.add(att)
+                    else:
+                        self._costo -= tour.budget
+                        for att in tour.attrazioni:
+                            attrazioni_usate.add(att)
+
+            self._pacchetto_ottimo.append(tour)
+
+        self._valore_ottimo = self._ricorsione(1,[], max_giorni, max_budget, 0, attrazioni_usate)
 
         return self._pacchetto_ottimo, self._costo, self._valore_ottimo
 
@@ -70,3 +93,25 @@ class Model:
         """ Algoritmo di ricorsione che deve trovare il pacchetto che massimizza il valore culturale"""
 
         # TODO: è possibile cambiare i parametri formali della funzione se ritenuto opportuno
+        if start_index >= len(pacchetto_parziale):
+            self._pacchetto_ottimo = pacchetto_parziale.copy()
+            self._costo = costo_corrente
+            self._valore_ottimo = valore_corrente
+            return pacchetto_parziale
+        tour = self.tour_map[start_index]
+        if tour.durata_giorni <= durata_corrente and tour.budget <= costo_corrente:
+            if not tour.attrazioni.intersection(attrazioni_usate):
+                pacchetto_parziale.append(tour)
+                attrazioni_usate.update(tour.attrazioni)
+                self._ricorsione(start_index + 1,
+                                 pacchetto_parziale,
+                                 durata_corrente + tour.durata_giorni,
+                                 costo_corrente + tour.costo,
+                                 valore_corrente + sum(a.valore_culturae for a in tour.attrazioni),
+                                 attrazioni_usate)
+                pacchetto_parziale.pop()
+                attrazioni_usate.difference(tour.attrazioni)
+            else:
+                return None
+        else:
+            return None
