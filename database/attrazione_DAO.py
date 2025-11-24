@@ -17,7 +17,7 @@ class AttrazioneDAO:
             return None
 
         cursor = cnx.cursor(dictionary=True)
-        query = """ SELECT * FROM attrazione """ # TODO
+        query = """ SELECT DISTINCT * FROM attrazione """ # TODO
         try:
             cursor.execute(query)
             for row in cursor:

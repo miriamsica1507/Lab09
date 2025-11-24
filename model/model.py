@@ -74,41 +74,31 @@ class Model:
         attrazioni_usate = set()
         for tour in self.tour_map.values():
             if tour.id_regione == id_regione:
-                if tour.durata_giorni <= max_giorni:
-                    if tour.costo <= max_budget:
+                if tour.durata_giorni <= max_giorni or max_giorni is None:
+                    if tour.costo <= max_budget or max_budget is None:
                             self._costo += tour.costo
                             for attr in tour.attrazioni:
                                 self._pacchetto_ottimo.append(attr)
                                 attrazioni_usate.add(attr)
 
-        self._valore_ottimo = self._ricorsione(1,[], max_giorni, max_budget, 0, attrazioni_usate)
+        self._valore_ottimo = self._ricorsione([], max_giorni, max_budget, 0, attrazioni_usate)
 
         return self._pacchetto_ottimo, self._costo, self._valore_ottimo
 
-    def _ricorsione(self, start_index: int, pacchetto_parziale: list, durata_corrente: int, costo_corrente: float, valore_corrente: int, attrazioni_usate: set):
+    def _ricorsione(self, pacchetto_parziale: list, durata_corrente: int, costo_corrente: float, valore_corrente: int, attrazioni_usate: set):
         """ Algoritmo di ricorsione che deve trovare il pacchetto che massimizza il valore culturale"""
 
         # TODO: è possibile cambiare i parametri formali della funzione se ritenuto opportuno
-        if start_index >= len(pacchetto_parziale):
-            self._pacchetto_ottimo = pacchetto_parziale.copy()
-            self._costo = costo_corrente
-            self._valore_ottimo = valore_corrente
-            return pacchetto_parziale
-        tour_list = list(self.tour_map.values())
-        tour = tour_list[start_index]
-        if tour.durata_giorni <= durata_corrente and tour.budget <= costo_corrente:
-            if not tour.attrazioni.intersection(attrazioni_usate):
-                pacchetto_parziale.append(tour)
-                attrazioni_usate.update(tour.attrazioni)
-                self._ricorsione(start_index + 1,
-                                 pacchetto_parziale,
-                                 durata_corrente + tour.durata_giorni,
-                                 costo_corrente + tour.costo,
-                                 valore_corrente + sum(a.valore_cultura for a in tour.attrazioni),
-                                 attrazioni_usate)
-                pacchetto_parziale.pop()
-                attrazioni_usate.difference(tour.attrazioni)
+        for attr in attrazioni_usate:
+            valore_corrente = attr.valore_culturale
+            if len(pacchetto_parziale) > 0:
+                max_valore_corrente = max(item[0] for item in pacchetto_parziale)
             else:
-                return None
-        else:
-            return None
+                max_valore_corrente = -1
+                if valore_corrente > max_valore_corrente:
+                    pacchetto_parziale.append([valore_corrente,durata_corrente,costo_corrente])
+                    self._ricorsione(pacchetto_parziale, durata_corrente, costo_corrente, valore_corrente, attrazioni_usate)
+                    pacchetto_parziale.pop()
+                else:
+                    continue
+
