@@ -65,6 +65,7 @@ class Model:
         :return: self._costo (il costo del pacchetto)
         :return: self._valore_ottimo (il valore culturale del pacchetto)
         """
+        global tour
         self._pacchetto_ottimo = []
         self._costo = 0
         self._valore_ottimo = -1
@@ -73,17 +74,12 @@ class Model:
         attrazioni_usate = set()
         for tour in self.tour_map.values():
             if tour.id_regione == id_regione:
-                if tour.durata_giorni == max_giorni:
-                    if tour.budget <= max_budget:
-                            self._costo += tour.budget
-                            for att in tour.attrazioni:
-                                attrazioni_usate.add(att)
-                    else:
-                        self._costo -= tour.budget
-                        for att in tour.attrazioni:
-                            attrazioni_usate.add(att)
-
-            self._pacchetto_ottimo.append(tour)
+                if tour.durata_giorni <= max_giorni:
+                    if tour.costo <= max_budget:
+                            self._costo += tour.costo
+                            for attr in tour.attrazioni:
+                                self._pacchetto_ottimo.append(attr)
+                                attrazioni_usate.add(attr)
 
         self._valore_ottimo = self._ricorsione(1,[], max_giorni, max_budget, 0, attrazioni_usate)
 
@@ -98,7 +94,8 @@ class Model:
             self._costo = costo_corrente
             self._valore_ottimo = valore_corrente
             return pacchetto_parziale
-        tour = self.tour_map[start_index]
+        tour_list = list(self.tour_map.values())
+        tour = tour_list[start_index]
         if tour.durata_giorni <= durata_corrente and tour.budget <= costo_corrente:
             if not tour.attrazioni.intersection(attrazioni_usate):
                 pacchetto_parziale.append(tour)
@@ -107,7 +104,7 @@ class Model:
                                  pacchetto_parziale,
                                  durata_corrente + tour.durata_giorni,
                                  costo_corrente + tour.costo,
-                                 valore_corrente + sum(a.valore_culturae for a in tour.attrazioni),
+                                 valore_corrente + sum(a.valore_cultura for a in tour.attrazioni),
                                  attrazioni_usate)
                 pacchetto_parziale.pop()
                 attrazioni_usate.difference(tour.attrazioni)
